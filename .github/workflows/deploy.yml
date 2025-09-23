@@ -1,0 +1,62 @@
+name: Deploy e-convenio
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: 🔄 Checkout do código
+      uses: actions/checkout@v3
+
+    - name: 🧪 Instalar dependências do backend
+      run: |
+        cd backend
+        npm install
+
+    - name: 🧪 Rodar testes do backend
+      run: |
+        cd backend
+        npm test
+
+    - name: 🧪 Instalar dependências do frontend
+      run: |
+        cd frontend
+        npm install
+
+    - name: 🧪 Rodar testes do frontend
+      run: |
+        cd frontend
+        npm test
+
+    - name: 🐳 Build dos containers
+      run: docker-compose -f docker-compose.yml build
+
+    - name: 📦 Exportar imagens
+      run: |
+        docker save e-convenio-backend -o backend.tar
+        docker save e-convenio-frontend -o frontend.tar
+
+    - name: 🚀 Deploy via SCP
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        password: ${{ secrets.VM_PASS }}
+        source: "backend.tar,frontend.tar,docker-compose.yml"
+        target: "~/e-convenio"
+
+    - name: 🔧 Rodar containers na VM
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        password: ${{ secrets.VM_PASS }}
+        script: |
+          cd ~/e-convenio
+          docker load -i backend.tar
+          docker load -i frontend.tar
+          docker-compose up -d
