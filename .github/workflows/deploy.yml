@@ -9,6 +9,16 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    
+    - name: 🔍 Testar conexão SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
+        script: echo "Conexão SSH bem-sucedida"
+
     - name: 🔄 Checkout do código
       uses: actions/checkout@v3
 
@@ -45,15 +55,6 @@ jobs:
       run: |
         docker save e-convenio-backend -o backend.tar
         docker save e-convenio-frontend -o frontend.tar
-
-    - name: 🔍 Testar conexão SSH
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.VM_HOST }}
-        username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_KEY }}
-        port: 22
-        script: echo "Conexão SSH bem-sucedida"
 
     - name: 🚀 Deploy via SCP
       uses: appleboy/scp-action@master
