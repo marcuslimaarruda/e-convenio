@@ -12,13 +12,13 @@ jobs:
     - name: 🔄 Checkout do código
       uses: actions/checkout@v3
 
-    - name: Instala Docker Compose
+    - name: 🐳 Instalar Docker Compose
       run: |
-          sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-          sudo chmod +x /usr/local/bin/docker-compose
-          docker-compose --version
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        docker-compose --version
 
-    - name: 🧪 Instalar dependências do backend
+    - name: 📦 Instalar dependências do backend
       run: |
         cd backend
         npm install
@@ -28,7 +28,7 @@ jobs:
         cd backend
         npm test
 
-    - name: 🧪 Instalar dependências do frontend
+    - name: 📦 Instalar dependências do frontend
       run: |
         cd frontend
         npm install
@@ -41,28 +41,39 @@ jobs:
     - name: 🐳 Build dos containers
       run: docker-compose -f docker-compose.yml build
 
-    - name: 📦 Exportar imagens
+    - name: 📦 Exportar imagens Docker
       run: |
         docker save e-convenio-backend -o backend.tar
         docker save e-convenio-frontend -o frontend.tar
+
+    - name: 🔍 Testar conexão SSH
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
+        script: echo "Conexão SSH bem-sucedida"
 
     - name: 🚀 Deploy via SCP
       uses: appleboy/scp-action@master
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USER }}
-        password: ${{ secrets.VM_PASS }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
         source: "backend.tar,frontend.tar,docker-compose.yml"
-        target: "~/e-convenio"
+        target: "/home/marcus/e-convenio"
 
     - name: 🔧 Rodar containers na VM
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USER }}
-        password: ${{ secrets.VM_PASS }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
         script: |
-          cd ~/e-convenio
+          cd /home/marcus/e-convenio
           docker load -i backend.tar
           docker load -i frontend.tar
           docker-compose up -d
