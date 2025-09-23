@@ -1,0 +1,39 @@
+# Node.js (backend e frontend)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+
+# React build
+frontend/build/
+frontend/.env.local
+frontend/.env.*
+
+# Docker
+*.pid
+*.tar
+*.gz
+*.log
+docker-compose.override.yml
+
+# Logs e temporários
+*.log
+logs/
+tmp/
+dist/
+coverage/
+
+# IDEs e sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Testes e configs
+jest.config.js
+babel.config.js
+
+# Banco local
+*.sqlite
+*.db
