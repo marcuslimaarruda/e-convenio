@@ -15,7 +15,7 @@ jobs:
       with:
         host: ${{ secrets.VM_HOST }}
         username: ${{ secrets.VM_USER }}
-        key: ${{ secrets.VM_KEY }}
+#        key: ${{ secrets.VM_KEY }}
         port: 22
         script: echo "Conexão SSH bem-sucedida"
 
