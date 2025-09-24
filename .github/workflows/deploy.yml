@@ -10,7 +10,7 @@ jobs:
 
     steps:
 
-    -name: whoami  
+    - name: whoami
       run: whoami
 
     - name: Adicionar host ao known_hosts
