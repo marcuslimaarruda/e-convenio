@@ -6,11 +6,11 @@ on:
 
 jobs:
   build-and-deploy:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
 
     steps:
     
-    - name: 🔍 Testar conexão SSH
+    - name: 🔍 Testar conexão SSH com servidor docker
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.VM_HOST }}
