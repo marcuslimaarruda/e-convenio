@@ -25,11 +25,11 @@ jobs:
     - name: 🔄 Checkout do código
       uses: actions/checkout@v3
 
-    - name: 🐳 Instalar Docker Compose
+    - name: Instalar Docker Compose via apt
       run: |
-        sudo curl -L "https://github.com/docker/compose/releases/download/v2.24.4/docker-compose-linux-x86_64" -o /usr/local/bin/docker-compose
-        sudo chmod +x /usr/local/bin/docker-compose
-        docker-compose --version
+        sudo apt update
+        sudo apt install -y docker-compose-plugin
+        docker compose version
 
     - name: 📦 Instalar dependências do backend
       run: |
