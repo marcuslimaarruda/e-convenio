@@ -1,103 +1,49 @@
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: e-convenio-backend
-  namespace: e-convenio-dev
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: e-convenio-backend
-  template:
-    metadata:
-      labels:
-        app: e-convenio-backend
-    spec:
-      containers:
-      - name: backend
-        image: marcus/e-convenio-backend:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          value: production
+name: Deploy e-convenio via Helm
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: e-convenio-backend
-  namespace: e-convenio-dev
-spec:
-  selector:
-    app: e-convenio-backend
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
-  type: ClusterIP
+on:
+  push:
+    branches: [ master ]
 
----
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: e-convenio-frontend
-  namespace: e-convenio-dev
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: e-convenio-frontend
-  template:
-    metadata:
-      labels:
-        app: e-convenio-frontend
-    spec:
-      containers:
-      - name: frontend
-        image: marcus/e-convenio-frontend:latest
-        ports:
-        - containerPort: 80
+jobs:
+  helm-deploy:
+    runs-on: ubuntu-latest
 
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: e-convenio-frontend
-  namespace: e-convenio-dev
-spec:
-  selector:
-    app: e-convenio-frontend
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 80
-  type: ClusterIP
+    env:
+      IMAGE_TAG: ${{ github.sha }}
 
----
-apiVersion: networking.k8s.io/v1
-kind: Ingress
-metadata:
-  name: e-convenio-ingress
-  namespace: e-convenio-dev
-  annotations:
-    nginx.ingress.kubernetes.io/rewrite-target: /
-spec:
-  rules:
-  - host: e-convenio.local
-    http:
-      paths:
-      - path: /api
-        pathType: Prefix
-        backend:
-          service:
-            name: e-convenio-backend
-            port:
-              number: 80
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: e-convenio-frontend
-            port:
-              number: 80
+    steps:
+    - name: 🔄 Checkout do código
+      uses: actions/checkout@v3
+
+    - name: 📦 Compactar Helm Chart
+      run: |
+        tar -czf helm-e-convenio.tar.gz helm-e-convenio
+
+    - name: 🔐 Adicionar host ao known_hosts
+      run: ssh-keyscan -H ${{ secrets.VM_HOST }} >> ~/.ssh/known_hosts
+
+    - name: 🚚 Enviar Helm Chart para a VM
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
+        source: "helm-e-convenio.tar.gz"
+        target: "/home/marcus"
+
+    - name: 🚀 Executar deploy via Helm na VM
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.VM_HOST }}
+        username: ${{ secrets.VM_USER }}
+        key: ${{ secrets.VM_KEY }}
+        port: 22
+        script: |
+          cd /home/marcus
+          rm -rf helm-e-convenio
+          tar -xzf helm-e-convenio.tar.gz
+          helm upgrade --install e-convenio ./helm-e-convenio \
+            --namespace e-convenio-dev \
+            --set backend.tag=${{ github.sha }} \
+            --set frontend.tag=${{ github.sha }}
